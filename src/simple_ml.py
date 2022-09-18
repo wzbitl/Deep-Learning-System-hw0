@@ -20,7 +20,7 @@ def add(x, y):
         Sum of x + y
     """
     ### BEGIN YOUR CODE
-    pass
+    return x + y
     ### END YOUR CODE
 
 
@@ -48,7 +48,16 @@ def parse_mnist(image_filename, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR CODE
-    pass
+    with gzip.open(label_filename, 'rb') as label_file:
+      magic_num, num_label = struct.unpack('>II', label_file.read(8))
+      y = np.fromstring(label_file.read(), dtype=np.uint8)
+    
+    with gzip.open(image_filename, 'rb') as image_file:
+      magic_num, num_image, num_row, num_column = struct.unpack('>IIII', image_file.read(16))
+      X = np.fromstring(image_file.read(), dtype=np.uint8).reshape(len(y), 784).astype(np.float32)
+      X = (X - np.min(X)) / (np.max(X) - np.min(X))
+
+    return X, y
     ### END YOUR CODE
 
 
@@ -68,7 +77,9 @@ def softmax_loss(Z, y):
         Average softmax loss over the sample.
     """
     ### BEGIN YOUR CODE
-    pass
+    a = np.log(np.sum(np.exp(Z), axis=1))
+    loss = np.sum(-Z[range(len(y)), y] + a)
+    return loss / len(y)
     ### END YOUR CODE
 
 
@@ -91,7 +102,19 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    num_examples = len(y)
+    index = 0
+    for i in range(num_examples // batch):
+      X_batch = X[index: index+batch]
+      y_batch = y[index: index+batch]
+      index += batch
+      Xthetaexp = np.exp(X_batch @ theta)
+      Xthetaexpsum = np.sum(Xthetaexp, axis=1)
+      Z = Xthetaexp / Xthetaexpsum[:, None]
+      I = np.zeros((batch, theta.shape[1]))
+      I[range(batch), y_batch] = 1
+      gradient = X_batch.T @ (Z - I) / batch
+      theta -= lr * gradient
     ### END YOUR CODE
 
 
