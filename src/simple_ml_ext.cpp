@@ -33,7 +33,68 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     /// BEGIN YOUR CODE
+  size_t iteration = m / batch;
+  float *X_batch = (float*)malloc(sizeof(float)*batch*n);
+  unsigned char *y_batch = (unsigned char*)malloc(sizeof(unsigned char)*batch);
+  float *Xthetaexp = (float*)malloc(sizeof(float)*batch*k);
+  float *Xthetaexpsum = (float*)malloc(sizeof(float)*batch);
+  float *I = (float*)malloc(sizeof(float)*batch*k);
+  float *gradient = (float*)malloc(sizeof(float)*n*k);
+  
+  
+  for (size_t it = 0; it < iteration; it++) {
 
+    size_t index = it * batch;
+    for (size_t i = 0; i < batch; i++) {
+      y_batch[i] = y[i+index];
+      for (size_t j = 0; j < n; j++) {
+        X_batch[i*n + j] = X[(i + index)*n + j];
+      }
+    }
+    for (size_t i = 0; i < batch; i++) {
+      float expsum = 0;
+      for (size_t j = 0; i < k; j++) {
+        float sum = 0;
+        for (size_t t = 0; t < n; t++) {
+          sum += X_batch[i*n + t] * theta[t*k + j];
+        }
+        Xthetaexp[i*k + j] = exp(sum);
+        expsum += Xthetaexp[i*k + j];
+      }
+      Xthetaexpsum[i] = expsum;
+    }
+    for (size_t i = 0; i < batch; i++) {
+      for (size_t j = 0; j < k; j++) {
+        Xthetaexp[i*k + j] /= Xthetaexpsum[i];
+        I[i*k + j] = 0;
+      }
+    }
+    for (size_t i = 0; i < batch; i++) {
+      size_t one_position = y_batch[i];
+      I[i*k + one_position] = 1;
+    }
+    for (size_t i = 0; i < batch; i++) {
+      for (size_t j = 0; j < k; j++) {
+        Xthetaexp[i*k + j] -= I[i*k + j];
+      }
+    }
+    for (size_t i = 0; i < n; i++) {
+      for (size_t j = 0; j < k; j++) {
+        float sum = 0;
+        for (size_t t = 0; t < batch; t++) {
+          sum += X_batch[t*batch + i] * Xthetaexp[t*k + j];
+        }
+        gradient[i*k + j] = sum / (float)batch;
+        theta[i*k + j] -= lr * gradient[i*k + j];
+      }
+    }
+  }
+  free(X_batch);
+  free(y_batch);
+  free(Xthetaexp);
+  free(Xthetaexpsum);
+  free(I);
+  free(gradient);
     /// END YOUR CODE
 }
 
